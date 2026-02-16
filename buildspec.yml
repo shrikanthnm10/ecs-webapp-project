@@ -1,0 +1,13 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin <account>.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+  build:
+    commands:
+      - docker build -t web-app .
+      - docker tag web-app:latest <account>.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/web-app:latest
+  post_build:
+    commands:
+      - docker push <account>.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/web-app:latest
