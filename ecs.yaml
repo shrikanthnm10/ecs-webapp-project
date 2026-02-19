@@ -1,0 +1,32 @@
+Cluster:
+  Type: AWS::ECS::Cluster
+
+TaskDefinition:
+  Type: AWS::ECS::TaskDefinition
+  Properties:
+    RequiresCompatibilities:
+      - FARGATE
+    Cpu: 256
+    Memory: 512
+    NetworkMode: awsvpc
+    ExecutionRoleArn: arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+    ContainerDefinitions:
+      - Name: web
+        Image: !Ref RepositoryUri
+        PortMappings:
+          - ContainerPort: 3000
+
+Service:
+  Type: AWS::ECS::Service
+  Properties:
+    Cluster: !Ref Cluster
+    LaunchType: FARGATE
+    DesiredCount: 1
+    NetworkConfiguration:
+      AwsvpcConfiguration:
+        Subnets: !Ref PrivateSubnets
+        AssignPublicIp: DISABLED
+    LoadBalancers:
+      - ContainerName: web
+        ContainerPort: 3000
+        TargetGroupArn: !Ref TargetGroupArn

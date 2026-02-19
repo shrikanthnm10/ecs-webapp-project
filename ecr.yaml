@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: ECR Repository
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: WebApp
+
+Resources:
+  ECRRepo:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub ${ProjectName}-repo
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+Outputs:
+  RepositoryUri:
+    Value: !GetAtt ECRRepo.RepositoryUri
