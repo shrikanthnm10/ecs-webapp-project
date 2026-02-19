@@ -1,56 +1,76 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: ALB Stack for ECS Application
+
 Parameters:
   VPC:
     Type: String
+    Description: VPC ID
+
   PublicSubnet1:
     Type: String
+    Description: Public Subnet 1 ID
+
   PublicSubnet2:
     Type: String
+    Description: Public Subnet 2 ID
+
   AppPort:
     Type: Number
     Default: 3000
+    Description: Application port
 
-ALBSG:
-  Type: AWS::EC2::SecurityGroup
-  Properties:
-    VpcId: !Ref VPC
-    GroupDescription: ALB SG
-    SecurityGroupIngress:
-      - IpProtocol: tcp
-        FromPort: 80
-        ToPort: 80
-        CidrIp: 0.0.0.0/0
+Resources:
 
-ALB:
-  Type: AWS::ElasticLoadBalancingV2::LoadBalancer
-  Properties:
-    Scheme: internet-facing
-    Subnets:
-      - !Ref PublicSubnet1
-      - !Ref PublicSubnet2
-    SecurityGroups:
-      - !Ref ALBSG
+  ALBSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: ALB Security Group
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
 
-TargetGroup:
-  Type: AWS::ElasticLoadBalancingV2::TargetGroup
-  Properties:
-    Port: !Ref AppPort
-    Protocol: HTTP
-    VpcId: !Ref VPC
-    TargetType: ip
-    HealthCheckPath: /
+  ALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: ECS-ALB
+      Scheme: internet-facing
+      Type: application
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      SecurityGroups:
+        - !Ref ALBSG
 
-Listener:
-  Type: AWS::ElasticLoadBalancingV2::Listener
-  Properties:
-    LoadBalancerArn: !Ref ALB
-    Port: 80
-    Protocol: HTTP
-    DefaultActions:
-      - Type: forward
-        TargetGroupArn: !Ref TargetGroup
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Port: !Ref AppPort
+      Protocol: HTTP
+      VpcId: !Ref VPC
+      TargetType: ip
+      HealthCheckPath: /
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 5
+
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ALB
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
 
 Outputs:
   TargetGroupArn:
+    Description: Target Group ARN
     Value: !Ref TargetGroup
+
   ALBDNS:
+    Description: ALB DNS URL
     Value: !GetAtt ALB.DNSName
